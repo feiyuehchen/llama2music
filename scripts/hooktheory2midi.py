@@ -85,13 +85,22 @@ def json2midi(save_dir, json_set):
         except:
             print(name)
 
-
-def main():
-    #need to change by yourself
-    with open('Hooktheory.json', 'r') as f:
+    
+    
+if __name__ == "__main__":
+    # Need to change by yourself
+    json_path = 'Hooktheory.json'
+    with open(json_path, 'r') as f:
         dataset = json.load(f)
 
+    
     print(f"total: {len(dataset)}")
+    
+    # Need to change by yourself
+    root_dir = './dataset'
+    train_dir = os.path.join(root_dir, 'train')
+    valid_dir = os.path.join(root_dir, 'valid')
+    test_dir = os.path.join(root_dir, 'test')
 
     # Filter dataset
 
@@ -123,17 +132,16 @@ def main():
     print(f"valid: {len(valid_set)}")
     print(f"test: {len(test_set)}")
 
-    # json2midi('./dataset/train', train_set)
-    # json2midi('./dataset/valid', valid_set)
-    # json2midi('./dataset/test', test_set)
+    json2midi(train_dir, train_set)
+    json2midi(valid_dir, valid_set)
+    json2midi(test_dir, test_set)
     
     print('================================')
     print('json2midi')
     print('================================')
-    print(f"train: {len(os.listdir('./dataset/train'))}")
-    print(f"valid: {len(os.listdir('./dataset/valid'))}")
-    print(f"test: {len(os.listdir('./dataset/test'))}")
+    print(f"train: {len(os.listdir(train_dir))}")
+    print(f"valid: {len(os.listdir(valid_dir))}")
+    print(f"test: {len(os.listdir(test_dir))}")
+
     
     
-if __name__ == "__main__":
-    main()
