@@ -1,82 +1,57 @@
 import os
 from pydub import AudioSegment
 from tqdm import tqdm
-import numpy as np
 import argparse
 
-
+def traverse_dir(root_dir,
+                extension=('mid', 'MID', 'midi'),
+                is_sort = False, 
+                is_pure = False
+                ):
+    file_list = []
+    for root, _, files in os.walk(root_dir):
+        for file in files:
+            if file.endswith(extension):
+                mix_path = os.path.join(root, file)
+                pure_path = mix_path[len(root_dir)+1:] if is_pure else mix_path
+                file_list.append(pure_path)
+    if is_sort:
+        print("sort the file list")
+        file_list.sort()
+    print(f"total count of the file: {len(file_list)}")
+    return file_list
 
 
 def midi2wav(args):
-    soundfont = args.soundfont
-    # you may specify the root
-    root = '../irishman/wav'
-    midi_train_path = '../irishman/midi/train'
-    midi_valid_path = '../irishman/midi/validation'
-    wav_train_path = os.path.join(root, 'train')
-    wav_valid_path = os.path.join(root, 'validation')
-    os.makedirs(wav_train_path, exist_ok=True)
-    os.makedirs(wav_valid_path, exist_ok=True)
-    print('train set')
+    file_list = traverse_dir(args.midi_dir, is_pure=True, is_sort=True)
     
-    midi_path = midi_train_path
-    wav_path = wav_train_path
-    import random
-    midi_list = os.listdir(midi_path)
-    random.shuffle(midi_list)
-    
-    for midi_filename in tqdm(midi_list):
-        midi_file = os.path.join(midi_path, midi_filename)
-        wav_file = os.path.join(wav_path, midi_filename.replace('mid', 'wav'))
+    for midi_file in tqdm(file_list):
+        
+        wav_name = midi_file.replace(os.path.splitext(midi_file)[1], '.wav')
+        wav_file = os.path.join(args.wav_dir, wav_name)
+        midi_file = os.path.join(args.midi_dir, midi_file)
+        print(wav_file)
         if not os.path.exists(wav_file):
-            os.system(f'fluidsynth -ni {soundfont} {midi_file} -F {wav_file} -r 44100')
-    
+            # save
+            fn = os.path.basename(wav_file)
+            os.makedirs(wav_file[:-len(fn)], exist_ok=True)
+            os.system(f'fluidsynth -ni {args.soundfont} {midi_file} -F {wav_file} -r {args.audio_frame_rate}')
+
     
 def wav2mp3(args):
-    root = '../irishman/wav'
-    wav_train_path = os.path.join(root, 'train')
-    wav_valid_path = os.path.join(root, 'validation')
+    file_list = traverse_dir(args.wav_dir, extension='wav', is_pure=True, is_sort=True)
     
-    def turnmp3(path, setname = None):
-        if setname=='train_set':
-            wav_list = os.listdir(path)
-            wav_list = np.array_split(wav_list, 20)
-            for id, wav_sublist in enumerate(wav_list):
-                
-                wav_sub_path = os.path.join(path.replace('wav', 'mp3'), str(id))
-                print(wav_sub_path)
-                os.makedirs(wav_sub_path, exist_ok=True)
-                for wav_filename in tqdm(wav_sublist):
-                    if not wav_filename.endswith('.wav'):
-                        continue
-                    wav_file = os.path.join(path, wav_filename)
-                    mp3_file = os.path.join(wav_sub_path, wav_filename).replace('wav', 'mp3')
-                    
-                    # print(wav_file)
-                    # print(mp3_file)
-                    audio = AudioSegment.from_file(wav_file)
-                    audio = audio.set_frame_rate(44100)
-                    audio.export(mp3_file, format='mp3')
-        else:                
-            for wav_filename in tqdm(path):
-                if not wav_filename.endswith('.wav'):
-                    continue
-                wav_file = os.path.join(path, wav_filename)
-                mp3_file = wav_file.replace('wav', 'mp3')
-                
-                # print(wav_file)
-                # print(mp3_file)
-                audio = AudioSegment.from_file(wav_file)
-                audio = audio.set_frame_rate(44100)
-                audio.export(mp3_file, format='mp3')
+    for wav_file in tqdm(file_list):
+        mp3_file = os.path.join(args.mp3_dir, wav_file.replace('.wav', '.mp3'))
+        fn = os.path.basename(mp3_file)
+        os.makedirs(mp3_file[:-len(fn)], exist_ok=True)
+        wav_file = os.path.join(args.wav_dir, wav_file)
 
-        
-        
-        
-    # turnmp3(wav_valid_path)
-    turnmp3(wav_train_path, 'train_set')
+        audio = AudioSegment.from_file(wav_file)
+        audio = audio.set_frame_rate(args.audio_frame_rate)
+        audio.export(mp3_file, format='mp3')
 
-    
+
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -93,7 +68,7 @@ if __name__ == '__main__':
         help="soundfont to convert midi to wav",
     )
     parser.add_argument(
-        "--extention", default=['midi', 'mid'], type=list,
+        "--extention", default=('mid', 'MID', 'midi'), 
         help="soundfont to convert midi to wav",
     )
     parser.add_argument(
@@ -107,6 +82,10 @@ if __name__ == '__main__':
     
     
     args = parser.parse_args()
+
+    os.makedirs(args.wav_dir, exist_ok=True)
+    os.makedirs(args.mp3_dir, exist_ok=True)
+    
     midi2wav(args)
     wav2mp3(args)
     
