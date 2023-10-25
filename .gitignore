@@ -1,3 +1,3 @@
 __pycache__
 *.pth
-dataset/music2text/leadsheet/hooktheory/*/midi
+dataset/music2text/leadsheet/hooktheory/*/*.midi
