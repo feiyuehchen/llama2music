@@ -29,23 +29,17 @@ def csv2json(metro_csv):
     # metro_column_name = ['ARTIST_NAME', 'ARTIST_URL', 'SONG_NAME', 'SONG_URL', 'LYRICS']
     for row in tqdm(metro_csv):
         # add lyrics information in input
-#         metro_json.append(
-#             {
-#                 "instruction": "",
-#                 "input": f"""Song: {row[0]}
-# Songwriter: {row[1]}
-# Year: {row[2]}
-# Lyrics:
-# {row[3]}""",
-#                 "output": ""
-#             }
-#         )
-        metro_json.append(f"""Song: {row[0]}
+        metro_json.append(
+            {
+                "instruction": "",
+                "input": f"""Song: {row[0]}
 Songwriter: {row[1]}
+Year: {row[2]}
 Lyrics:
-{row[3]}"""    
+{row[3]}""",
+                "output": ""
+            }
         )
-        
     
     print(metro_json[0])
     return metro_json
@@ -53,7 +47,7 @@ Lyrics:
 
 if __name__ == "__main__":
     # you may change the directory
-    metro_raw_path = '../../music_dataset/metrolyrics.csv'
+    metro_raw_path = '../../music_dataset/az_lmd_dataset/metrolyrics.csv'
     metro_json_save_path = '../dataset/lyrics/metro.json'
     
     metro_csv = read_metro_csv(metro_raw_path)

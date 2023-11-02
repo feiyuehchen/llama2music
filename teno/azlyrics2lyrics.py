@@ -18,7 +18,7 @@ def read_az_csv(az_root_dir):
     for row in az_csv:
         if len(row)==5 and row[4]:
             clean_az_csv.append([row[0], # artist
-                                 row[1], # artitst url
+                                 row[1], # year
                                  row[2], # song name
                                  row[3], # song url
                                  row[4]  # lyrics
@@ -33,20 +33,17 @@ def csv2json(az_csv):
     # az_column_name = ['ARTIST_NAME', 'ARTIST_URL', 'SONG_NAME', 'SONG_URL', 'LYRICS']
     for row in tqdm(az_csv):
         # add lyrics information in input
-#         az_json.append(
-#             {
-#                 "instruction": "",
-#                 "input": f"""Song: {row[2]}
-# Songwriter: {row[0]}
-# Lyrics:
-# {row[4]}""",
-#                 "output": ""
-#             }
-#         )
-        az_json.append(f"""Song: {row[2]}
+        az_json.append(
+            {
+                "instruction": "",
+                "input": f"""Song: {row[2]}
 Songwriter: {row[0]}
+Year: {row[1]}
 Lyrics:
-{row[4]}""")
+{row[4]}""",
+                "output": ""
+            }
+        )
     
     print(az_json[0])
     
@@ -55,7 +52,7 @@ Lyrics:
 if __name__ == "__main__":
 
     # you may change the directory
-    az_root_dir = '../../music_dataset/azlyrics-scraper'
+    az_root_dir = '../../music_dataset/az_lmd_dataset/azlyrics-scraper'
     az_json_save_path = '../dataset/lyrics/az.json'
     
     az_csv = read_az_csv(az_root_dir)
