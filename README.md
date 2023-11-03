@@ -1,14 +1,11 @@
 # llama2music
 
 
-GPU list
-
-id   3 4 5
-real 0 1 2
 
 # enviroment
 source activate /home/feiyuehchen/anaconda3/envs/llama2
-cd /home/feiyuehchen/personality/music_dataset/scripts
+cd /home/feiyuehchen/personality/llama2music/scripts
+
 
 
 # training

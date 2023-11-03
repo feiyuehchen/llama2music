@@ -1,6 +1,7 @@
 __pycache__
 *.pth
 dataset/music2text/leadsheet/hooktheory/*/*.midi
+credentials.yaml
 
 *.json
 *.npy
