@@ -4,61 +4,115 @@ import numpy as np
 import pandas as pd
 import pickle
 import argparse
+from miditoolkit.midi import parser as mid_parser  
+from miditoolkit.midi import containers as ct
 
 
-def test(args):
+def main(args):
     seqlength = 20
     num_midi_features = 3
-    num_sequences_per_song = 2
-    training_rate = 0.8
-    validation_rate = 0.1
-    test_rate = 0.1
+    velocity = 60
     
-
-    syll_model_path = os.path.join(args.data_dir, 'enc_models/syllEncoding_20190419.bin') 
-    word_model_path = os.path.join(args.data_dir, 'enc_models/wordLevelEncoder_20190419.bin') 
-
     songs_path = os.path.join(args.data_dir,  'data/songs_word_level')
 
-    print('Creating a dataset with sequences of length', seqlength, 
-        'with', num_sequences_per_song, 'sequences per song')
 
-    syllModel = Word2Vec.load(syll_model_path)
-    wordModel = Word2Vec.load(word_model_path)
-    syll2Vec = syllModel.wv['Hello']
-    word2Vec = wordModel.wv['world']
-    num_syll_features = len(syll2Vec) + len(word2Vec)
-    print('Syllable embedding length :', num_syll_features)
     files = os.listdir(songs_path)
+    print(files[:5])
     num_songs = len(files)
     print("Total number of songs : ", num_songs)
     
-    seq_filename_list = [] # to keep track of filename from which a sequence is extracted
     small_file_cntr = 0 # to keep track of files with less than 20 syllable-note pairs
     
-    sample_file = files[0]
-    sample_features = np.load(os.path.join(songs_path, sample_file), allow_pickle=True) # load midi files to feature
-    print(len(sample_features), len(sample_features[0]))
+    # sample_file = files[0]
+    # sample_features = np.load(os.path.join(songs_path, sample_file), allow_pickle=True) # load midi files to feature
+    # print(len(sample_features), len(sample_features[0]))
 
-    # import midi
-    import sys
-    sys.path.append('/home/feiyuehchen/personality/python-midi')
-    import src.fileio as midi
-    sys.path.append('/home/feiyuehchen/personality/music_dataset')
-    import LSTM_GAN.utils as LSTMutils
-    import LSTM_GAN.midi_statistics as midi_statistics
-    def save_midi_pattern(filename, midi_pattern):
-        if filename is not None:
-            midi.write_midifile(filename, midi_pattern)
+    #     if filename is not None:
+    #         midi.write_midifile(filename, midi_pattern)
 
 
-    sample = midi_statistics.tune_song(LSTMutils.discretize(sample_features[0][1]))
-    midi_pattern = LSTMutils.create_midi_pattern_from_discretized_data(sample)
-
-    destination = "test.mid"
-    midi_pattern.write(destination)
+    # destination = "test.mid"
+    # midi_pattern.write(destination)
     
 
+
+    
+    # load all the songs, cut to 20 note-sequence, convert to song embeddinds
+
+    i = 0
+    j = 0
+
+    for file in files:
+        features = np.load(os.path.join(songs_path, file), allow_pickle=True) # load midi files to feature
+        print(features[0][1])
+        if len(features[0][1]) >= seqlength: # seqlength = 20, if length of song > 20 note
+            j = 0
+            word = ''
+            # create an empty file
+            midi_obj = mid_parser.MidiFile()
+            beat_resol = midi_obj.ticks_per_beat # 480
+            # create an  instrument
+            track = ct.Instrument(program=0, is_drum=False, name='melody')
+            midi_obj.instruments = [track]
+            prev_end = 0
+            
+            # turn features[0][3] from [['but'], ['o', 'ver']] to ['but', 'o', 'ver']
+            new_syllList = []
+            for syllList in features[0][3]:
+                for syll in syllList:
+                    new_syllList.append(syll)
+
+            # take midi and syllable
+            for midiList, syllList in zip(features[0][1], features[0][3]):
+                
+                for midi, syll in zip(midiList, syllList):
+                    # for each midi in midiList:
+                    # [[76.0, 0.25, 0.0]]
+                    # [[pitch, duration, rest]] 
+                    # create one note      
+                    
+                    pitch = int(midi[0])
+                    duration = int(beat_resol*midi[1])
+                    rest = int(beat_resol*midi[2])
+                    start = prev_end
+                    end = prev_end + duration
+                    note = ct.Note(start=start, end=end, pitch=pitch, velocity=velocity)
+                    midi_obj.instruments[0].notes.append(note)
+                    # create one marker(syllable)
+                    # [['but'], ['o', 'ver']]
+                    word += syll
+                    marker = ct.Marker(time=start, text=syll)
+                    midi_obj.markers.append(marker)
+                    # prepare_next
+                    prev_end = end+rest
+                    
+                # if there is a rest, add a newline
+                if rest > 0: 
+                    word += '\n'
+                    marker = ct.Marker(time=start, text='\n')
+                    midi_obj.markers.append(marker)
+                else:
+                    word += ' '
+                
+                
+                
+            
+                
+            
+            # print(word)
+            # print(midi_obj.markers)
+            # write to file
+            # for note in midi_obj.instruments[0].notes:
+            #     print(note)
+            midi_obj.dump('result.mid')
+
+
+        
+        else: # seqlength < 20
+            small_file_cntr += 1
+            
+    
+        break
     
 
 
@@ -69,10 +123,15 @@ if __name__ == '__main__':
         help="path for the directory of LSTM-GAN",
     )
     parser.add_argument(
-        "--lyrics_path", default='../dataset/lyrics/raw/', 
-        help="path for the directory of LSTM-GAN",
+        "--midi_dir", default='../dataset/music/raw/LSTM-GAN', 
+        help="directory for saving midi files",
     )
+    parser.add_argument(
+        "--lyrics_dir", default='../dataset/music/raw/LSTM-GAN', 
+        help="directory for saving midi files",
+    )
+    
 
     
     args = parser.parse_args()
-    test(args)
+    main(args)
