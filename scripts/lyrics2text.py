@@ -31,7 +31,6 @@ def load_dataset(args):
         clean_lyrics_dataset = json.load(f)
         print(f"length of the clean dataset: {len(clean_lyrics_dataset)}")    
 
-
     else:
         print('combining dataset ...')
         print('============================')
@@ -40,14 +39,20 @@ def load_dataset(args):
             print(json_name)
             f = open(os.path.join(args.lyrics_dir, json_name))
             temp_data = json.load(f)
-            lyrics_dataset += temp_data
+            # give each data an unique id
+            for id, data in enumerate(temp_data):
+                lyrics_dataset.append({
+                    'id': json_name+'_'+str(id),
+                    'data': data
+                })
         
         print(f"dataset with all languages: {len(lyrics_dataset)}")
         
         clean_lyrics_dataset = []
-        for lyrics in tqdm(lyrics_dataset):
-            if detect(lyrics) == 'en':
-                clean_lyrics_dataset.append(lyrics)
+        for pair in tqdm(lyrics_dataset):
+            
+            if detect(pair['data'][0]) == 'en':
+                clean_lyrics_dataset.append(pair)
         
         print(f"dataset with English only: {len(clean_lyrics_dataset)}")    
         
@@ -55,16 +60,9 @@ def load_dataset(args):
             json.dump(clean_lyrics_dataset, f)
             
     
-    # give id
-    id_clean_lyrics_dataset = []
-    clean_lyrics_dataset = sorted(clean_lyrics_dataset)
-    for id in range(len(clean_lyrics_dataset)):
-        id_clean_lyrics_dataset.append({
-            'id' : id,
-            'lyrics': clean_lyrics_dataset[id]
-        })
+
     
-    return id_clean_lyrics_dataset
+    return clean_lyrics_dataset
 
 
 
@@ -77,7 +75,7 @@ def batch(iterable, n=1):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--lyrics_dir", default='../dataset/lyrics/raw', 
+        "--lyrics_dir", default='../../music_dataset/llama2music/dataset/lyrics/raw', 
         help="directory for lyrics datasets",
     )
     parser.add_argument(
@@ -85,11 +83,11 @@ if __name__ == '__main__':
         help="path for the openAI credentials",
     )
     parser.add_argument(
-        "--save_path", default='../dataset/lyrics2text/lyrics2text.json', 
+        "--save_path", default='../../music_dataset/llama2music/dataset/lyrics2text/lyrics2text.json', 
         help="save path for the output lyrics and text",
     )
     parser.add_argument(
-        "--clean_lyrics_save_path", default='../dataset/lyrics/clean_lyrics.json', 
+        "--clean_lyrics_save_path", default='../../music_dataset/llama2music/dataset/lyrics/clean_lyrics.json', 
         help="save path for the clean lyrics dataset",
     )
     parser.add_argument(
@@ -98,14 +96,14 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         "--previos_json", default= None, 
-        help="if there is lyrics2.json and you want to append it",
+        help="if there is lyrics2text.json and you want to append it",
     )
     parser.add_argument(
         "--multiprocess", default= 32, 
         help="parallel run GPT completion",
     )
     parser.add_argument(
-        "--batch", default= 500, 
+        "--batch", default= 500, type=int, 
         help="batch for every saving epoch",
     )
 
@@ -114,6 +112,8 @@ if __name__ == '__main__':
     
     
     args = parser.parse_args()
+    os.makedirs(os.path.dirname(args.save_path), exist_ok=True)
+    os.makedirs(os.path.dirname(args.clean_lyrics_save_path), exist_ok=True)
     getcreds(args.cred_path)
     lyrics_dataset = load_dataset(args)
     random.shuffle(lyrics_dataset)
@@ -131,7 +131,7 @@ if __name__ == '__main__':
         f = open(args.previos_json)
         response_dataset = json.load(f)
         for item in response_dataset:
-            id_set.add(item['lyrics_id'])
+            id_set.add(item['id'])
     
     print(f'id_set: {len(id_set)}')    
     print(f'response_dataset: {len(response_dataset)}')
@@ -166,15 +166,15 @@ if __name__ == '__main__':
 
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt+item['lyrics']}]
+                messages=[{"role": "user", "content": prompt+item['data'][0]}]
             )   
-        
+
             # print(response['choices'][0]['message']['content'])
             # print(response)
             # response_dataset.append({
-            #     'lyrics_id': item['id'],
+            #     'id': item['id'],
             #     'instuction': instruction,
-            #     'input': item['lyrics'],
+            #     'input': item['data'][0],
             #     'output': response['choices'][0]['message']['content']
             #     })
             
@@ -188,19 +188,21 @@ if __name__ == '__main__':
             
             # print(f"length of the response dataset: {len(response_dataset)}")
             bind = {
-                    'lyrics_id': item['id'],
+                    'id': item['id'],
                     'instuction': instruction,
-                    'input': item['lyrics'],
+                    'input': item['data'][0],
                     'output': response['choices'][0]['message']['content']
                     }
             # print("success:", item['id'])
 
         except Exception: 
+            print(f"bind is None, ID: {item['id']}")
             bind = None
         
         signal.alarm(0)
         
         return bind
+    
         
     count = 0
     for subset in batch(lyrics_dataset, args.batch):
@@ -215,9 +217,12 @@ if __name__ == '__main__':
         print('remove NULL')
         response_dataset = [i for i in response_dataset if i is not None]
         print(f"{len(response_dataset)}/{len(lyrics_dataset)}")
-        save_path = args.save_path.replace('.json', f'_{len(response_dataset)}.json')
+        save_path = os.path.dirname(ags.save_path) + f'/temp/lyrics2text_{len(response_dataset)}.json'
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
         with open(save_path, 'w') as f:
-            json.dump(response_dataset, f)
+            json.dump(response_dataset, f, indent=4)
+        with open(args.save_path, 'w') as f:
+            json.dump(response_dataset, f, indent=4)
 
 
 
@@ -230,6 +235,6 @@ if __name__ == '__main__':
     print(f"{len(response_dataset)}/{len(lyrics_dataset)}")
 
     with open(args.save_path, 'w') as f:
-        json.dump(response_dataset, f)
+        json.dump(response_dataset, f, indent=4)
     
     

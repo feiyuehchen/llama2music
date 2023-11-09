@@ -1,12 +1,17 @@
 # llama2music
 
 
-
 # enviroment
 source activate /home/feiyuehchen/anaconda3/envs/llama2
 cd /home/feiyuehchen/personality/llama2music/scripts
 
+# for root
+source /home/feiyuehchen/anaconda3/envs/llama2/bin/activate
 
+# sheetstage
+source activate /home/feiyuehchen/anaconda3/envs/llama2/envs/jukebox 
+cd /home/feiyuehchen/personality/music_dataset/msd_sheet
+python ../../llama2music/scripts/msd2sheet.py 
 
 # training
 

@@ -177,7 +177,7 @@ def eval(args, model, test_dataset, test_loader, num_beams=5):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--save_path", default='../dataset/music2text/music2text.json', 
+        "--save_path", default='../../music_dataset/dataset/music2text/music2text.json', 
         help="path for the output file",
     )
     parser.add_argument(
@@ -189,7 +189,7 @@ if __name__ == '__main__':
         help="directory for the input audio directory",
     )
     parser.add_argument(
-        "--npy_dir", default='../dataset/music/raw/hooktheory/wav', 
+        "--npy_dir", default='../../music_dataset/dataset/music/raw/hooktheory/wav', 
         help="directory for the output tensor audio data",
     )
     parser.add_argument(

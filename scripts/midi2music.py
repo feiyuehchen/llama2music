@@ -64,12 +64,12 @@ def mp3_exc(wav_file):
 def wav2mp3(args):
     print('wav2mp3')
     file_list = traverse_dir(args.wav_dir, extension='wav', is_pure=True, is_sort=True)
-    
     for wav_file in tqdm(file_list):
-        
+        with Pool(args.multiprocess) as p:
+            # progress_bar = tqdm(total=len(file_list))
+            L = p.starmap(mp3_exc, zip(file_list, repeat(args)))
+            
 
-
-    
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(

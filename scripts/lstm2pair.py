@@ -6,6 +6,9 @@ import pickle
 import argparse
 from miditoolkit.midi import parser as mid_parser  
 from miditoolkit.midi import containers as ct
+import json
+from tqdm import tqdm
+
 
 
 def main(args):
@@ -25,7 +28,7 @@ def main(args):
     
     # sample_file = files[0]
     # sample_features = np.load(os.path.join(songs_path, sample_file), allow_pickle=True) # load midi files to feature
-    # print(len(sample_features), len(sample_features[0]))
+    # print(len(sample_features), len(sample_features[0]))   
 
     #     if filename is not None:
     #         midi.write_midifile(filename, midi_pattern)
@@ -39,14 +42,12 @@ def main(args):
     
     # load all the songs, cut to 20 note-sequence, convert to song embeddinds
 
-    i = 0
-    j = 0
+    lstm_json = []
+    
 
-    for file in files:
+    for file in tqdm(files):
         features = np.load(os.path.join(songs_path, file), allow_pickle=True) # load midi files to feature
-        print(features[0][1])
         if len(features[0][1]) >= seqlength: # seqlength = 20, if length of song > 20 note
-            j = 0
             word = ''
             # create an empty file
             midi_obj = mid_parser.MidiFile()
@@ -101,18 +102,28 @@ def main(args):
             
             # print(word)
             # print(midi_obj.markers)
-            # write to file
             # for note in midi_obj.instruments[0].notes:
             #     print(note)
-            midi_obj.dump('result.mid')
-
-
+            
+            
+            # write to file
+            midi_obj.dump(os.path.join(args.midi_dir, file.replace('npy', 'mid')))
+            lstm_json.append(f"""Lyrics:
+{word}"""    
+        )
         
         else: # seqlength < 20
             small_file_cntr += 1
-            
     
-        break
+    with open(os.path.join(args.lyrics_dir, 'lstm.json'), 'w') as f:
+        json.dump(lstm_json, f)
+    
+       
+def split_dataset(args):
+    f = open(os.path.join(args.lyrics_dir, 'lstm.json'))
+    all_dataset = json.load(f)
+    
+    
     
 
 
@@ -123,15 +134,22 @@ if __name__ == '__main__':
         help="path for the directory of LSTM-GAN",
     )
     parser.add_argument(
-        "--midi_dir", default='../dataset/music/raw/LSTM-GAN', 
+        "--midi_dir", default='../../music_dataset/llama2music/dataset/music/raw/LSTM_GAN', 
         help="directory for saving midi files",
     )
     parser.add_argument(
-        "--lyrics_dir", default='../dataset/music/raw/LSTM-GAN', 
-        help="directory for saving midi files",
+        "--lyrics_dir", default='../../music_dataset/llama2music/dataset/lyrics/raw', 
+        help="directory for saving lyrics files",
     )
-    
+    parser.add_argument(
+        "--split_ratio", default=0.01, 
+        help="directory for saving lyrics files",
+    )    
+
 
     
     args = parser.parse_args()
+    os.makedirs(args.midi_dir, exist_ok = True)
+    os.makedirs(args.lyrics_dir, exist_ok = True)
+
     main(args)
