@@ -1,0 +1,6 @@
+README.md
+setup.py
+llama2music.egg-info/PKG-INFO
+llama2music.egg-info/SOURCES.txt
+llama2music.egg-info/dependency_links.txt
+llama2music.egg-info/top_level.txt

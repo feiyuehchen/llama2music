@@ -19,9 +19,16 @@ from io import BytesIO
 import pretty_midi
 
 def music2sheet(args_list):
-
     mp3_file, args = args_list
-    print(mp3_file)
+    
+
+    midi_path = os.path.join(args.save_dir, mp3_file.replace('.mp3', '.mid'))
+    if os.path.exists(midi_path):
+        print(f"Midi file already exist: {mp3_file}")
+        # return midi_path
+        return
+    else:
+        print(mp3_file)
     USE_JUKEBOX = False
     # SEGMENT_START_HINT = 69
     # SEGMENT_END_HINT = 88
@@ -37,10 +44,9 @@ def music2sheet(args_list):
     beat_to_time_fn = create_beat_to_time_fn(segment_beats, segment_beats_times)
     midi_bytes = lead_sheet.as_midi(beat_to_time_fn)
     midi = pretty_midi.PrettyMIDI(BytesIO(midi_bytes))
-    midi_path = os.path.join(args.save_dir, mp3_file.replace('.mp3', '.mid'))
     midi.write(midi_path)
     
-    return midi_path
+    # return midi_path
 
 
 def batch(iterable, n=1):
@@ -54,6 +60,10 @@ def main(args):
     for line in f.readlines():
         mp3_file = line.split('<SEP>')[0]+'.mp3'
         mp3_list.append(mp3_file)
+    
+    if args.slice_start:
+        mp3_list = mp3_list[args.slice_start:args.slice_end]
+    
 
     if args.start_previos:
         previos_finished = len(os.listdir(args.save_dir))
@@ -91,15 +101,23 @@ if __name__ == '__main__':
         help="Directory for the sheetstage. Only for import.",
     )
     parser.add_argument(
-        "--multiprocess", default= 32, 
-        help="parallel run GPT completion",
+        "--multiprocess", default= 32, type=int,
+        help="parallel run",
     )
     parser.add_argument(
-        "--batch", default= 1000, 
+        "--batch", default= 1000, type=int, 
         help="batch for every saving epoch",
     )
     parser.add_argument(
-        "--start_previos", default=True,
+        "--slice_start", default=None, type=int,
+        help="slice the mp3_list"
+    )
+    parser.add_argument(
+        "--slice_end", default=None, type=int,
+        help="slice the mp3_list"
+    )
+    parser.add_argument(
+        "--start_previos", default=False,
         help="start from the previos or not"
     )
     

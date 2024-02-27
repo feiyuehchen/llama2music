@@ -1,0 +1,2 @@
+Instruction,Input,Temperature,Top p,Top k,Beams,Max tokens,Stream output,Output,flag,username,timestamp
+Give me an example in ABC notation for the melody with the following control codes.,S:2\nB:9\nE:5\nB:9\n,0.1,0.75,40,4,128,False,,,,2023-12-02 17:15:22.493961

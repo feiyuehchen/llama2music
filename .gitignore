@@ -1,8 +1,21 @@
 __pycache__
 *.pth
-dataset/music2text/leadsheet/hooktheory/*/*.midi
 credentials.yaml
 
 *.json
 *.npy
-dataset/
+
+path/
+tokenizer/
+src/
+*.log
+
+dataset
+
+OUTPUT
+PATH
+generation
+Chinese-LLaMA-Alpaca-2
+tmp
+LLM-Adapters
+lp-music-caps
