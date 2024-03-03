@@ -59,7 +59,7 @@ def get_dataset(data_path):
 def main(
     model_name: str="/home/feiyuehchen/personality/llama/llama-2-7b-hf",
     peft_model: str="/home/feiyuehchen/personality/llama2music/scripts/training/PATH/to/save/PEFT/model",
-    quantization: bool=True,
+    quantization: bool=False,
     save_path: str="OUTPUT/REMI_20000_model_2048.json",
     max_new_tokens = 2048, #The maximum numbers of tokens to generate
     prompt_file: str="/home/feiyuehchen/personality/llama2music/dataset/processed_data",
@@ -67,17 +67,17 @@ def main(
     do_sample: bool=True, #Whether or not to use sampling ; use greedy decoding otherwise.
     min_length: int=None, #The minimum length of the sequence to be generated, input prompt + min_new_tokens
     use_cache: bool=False,  #[optional] Whether or not the model should use the past last key/values attentions Whether or not the model should use the past last key/values attentions (if applicable to the model) to speed up decoding.
-    top_p: float=1.0, # [optional] If set to float < 1, only the smallest set of most probable tokens with probabilities that add up to top_p or higher are kept for generation.
-    temperature: float=1.2, # [optional] The value used to modulate the next token probabilities.
-    top_k: int=10, # [optional] The number of highest probability vocabulary tokens to keep for top-k-filtering.
+    top_p: float=4.0, # [optional] If set to float < 1, only the smallest set of most probable tokens with probabilities that add up to top_p or higher are kept for generation.
+    temperature: float=1.0, # [optional] The value used to modulate the next token probabilities.
+    top_k: int=50, # [optional] The number of highest probability vocabulary tokens to keep for top-k-filtering.
     repetition_penalty: float=1, #The parameter for repetition penalty. 1.0 means no penalty.
-    length_penalty: int=1, #[optional] Exponential penalty to the length that is used with beam-based generation. 
+    length_penalty: int=-5, #[optional] Exponential penalty to the length that is used with beam-based generation. 
     enable_azure_content_safety: bool=False, # Enable safety check with Azure content safety api
     enable_sensitive_topics: bool=False, # Enable check for sensitive topics using AuditNLG APIs
     enable_salesforce_content_safety: bool=True, # Enable safety check with Salesforce safety flan t5
     enable_llamaguard_content_safety: bool=False,
-    max_padding_length: int=512, # the max padding length to be used with tokenizer padding the prompts.
-    use_fast_kernels: bool = False, # Enable using SDPA from PyTroch Accelerated Transformers, make use Flash Attention and Xformer memory-efficient kernels
+    max_padding_length: int=2048, # the max padding length to be used with tokenizer padding the prompts.
+    use_fast_kernels: bool = True, # Enable using SDPA from PyTroch Accelerated Transformers, make use Flash Attention and Xformer memory-efficient kernels
     **kwargs
 ):
     # if prompt_file is not None:
@@ -126,14 +126,16 @@ def main(
     model = load_model(model_name, quantization)
 
     tokenizer = LlamaTokenizer.from_pretrained(peft_model)
-    tokenizer.pad_token = tokenizer.eos_token
-
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
     embedding_size = model.get_input_embeddings().weight.shape[0]
     if len(tokenizer) != embedding_size:
         model.resize_token_embeddings(len(tokenizer))
-
     
+    print(len(tokenizer))
+
     if peft_model:
+        print(f'load peft model from {peft_model}')
         model = load_peft_model(model, peft_model)
 
     model.eval()

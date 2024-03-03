@@ -144,14 +144,12 @@ def main(**kwargs):
         print("use peft")
         print(f"load model from {train_config.peft_model}")
         model = PeftModel.from_pretrained(model, train_config.peft_model, is_trainable=True)
-        model.print_trainable_parameters()
         
     elif train_config.use_peft:
         print("use peft")
         peft_config = generate_peft_config(train_config, kwargs)
         model = get_peft_model(model, peft_config)
-        model.print_trainable_parameters()
-        
+    model.print_trainable_parameters()
 
     #setting up FSDP if enable_fsdp is enabled
     if train_config.enable_fsdp:
